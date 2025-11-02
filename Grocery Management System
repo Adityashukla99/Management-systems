@@ -1,0 +1,82 @@
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <vector>
+#include <cstdlib>
+using namespace std;
+
+string board[5][3] = {
+    {"ID","ITEMS","PRICE"},
+    {"1","FLOUR","200RS"},
+    {"2","RICE","250RS"},
+    {"3","SUGAR","100RS"},
+    {"4","SALT","150RS"}
+};
+
+vector<string> cart;
+int choice;
+int amount = 0;
+bool endSession = false;
+
+void addCart(int choice) {
+    switch(choice) {
+        case 1: cart.push_back("FLOUR"); amount += 200; break;
+        case 2: cart.push_back("RICE");  amount += 250; break;
+        case 3: cart.push_back("SUGAR"); amount += 100; break;
+        case 4: cart.push_back("SALT");  amount += 150; break;
+        default: cout << "Invalid choice!" << endl;
+    }
+}
+
+void showCart() {
+    cout << "\nYour cart:" << endl;
+    if(cart.empty()) {
+        cout << "empty" << endl;
+    } else {
+        for(size_t i = 0; i < cart.size(); i++) {
+            cout << (i+1) << ") " << cart[i] << endl;
+        }
+    }
+    cout << "Total amount = " << amount << " RS" << endl;
+}
+
+int main() {
+    while(endSession==false) {
+        system("cls");
+
+
+        cout << " _______________________ " << endl;
+        cout << "| WELCOME TO MY STORE  |" << endl;
+        cout << " _______________________ " << endl;
+
+
+        for (int i = 0; i < 5; i++) {
+            cout << setw(5) << board[i][0]<< setw(10) << board[i][1]<< setw(8) << board[i][2] << endl;
+        }
+        cout << " _______________________" << endl;
+
+
+        showCart();
+
+
+        cout << "\nEnter zero(0) to end the session" << endl;
+        cout << "Enter the ID of the product you want to buy: ";
+        cin >> choice;
+
+        if(choice == 0) {
+            endSession = true;
+        } else {
+            addCart(choice);
+        }
+    }
+
+    system("cls");
+    cout << "\nFinal cart:" << endl;
+    for(size_t i = 0; i < cart.size(); i++) {
+        cout << (i+1) << ") " << cart[i] << endl;
+    }
+    cout << "Final total = " << amount << " RS" << endl;
+    cout << "Thank you for shopping!" << endl;
+
+    return 0;
+}
