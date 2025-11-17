@@ -1,0 +1,897 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <iomanip>
+#include <algorithm>
+#include <fstream>
+using namespace std;
+
+class Admin
+{
+public:
+    int revenue = 0;
+
+    struct Room
+    {
+        int roomNumber;
+        string type;
+        int pricePerNight;
+        int capacity;
+        bool booked;
+        string bookedBy;
+        int daysBooked;
+    };
+
+    vector<Room> hotelRooms = {
+        {101, "AC", 2500, 2, false, "", 0},
+        {102, "AC", 2000, 2, false, "", 0},
+        {103, "AC", 2200, 2, false, "", 0},
+        {104, "AC", 2700, 3, false, "", 0},
+        {105, "Suite", 5000, 4, false, "", 0},
+        {106, "Suite", 5500, 5, false, "", 0},
+        {107, "AC", 2300, 2, false, "", 0},
+        {108, "AC", 2100, 2, false, "", 0},
+        {109, "Suite", 6000, 4, false, "", 0},
+        {110, "Suite", 6500, 5, false, "", 0}};
+
+    vector<Room> bookedRooms;
+    vector<string> customerReviews;
+    int enteredPassword = 0;
+
+    void showRooms() const {
+    cout << "DEBUG: Total rooms in system: " << hotelRooms.size() << endl;
+
+    if (hotelRooms.empty()) {
+        cout << "ERROR: No rooms found in the system!\n";
+        return;
+    }
+
+    // Your existing display code...
+    cout << "============================================================\n";
+    cout << setw(10) << left << "Room No" << setw(15) << left << "Type"
+         << setw(15) << left << "Price/Night" << setw(10) << left << "Capacity"
+         << setw(10) << left << "Status" << endl;
+    cout << "============================================================\n";
+
+    for (const auto &room : hotelRooms) {
+        cout << setw(10) << left << room.roomNumber
+             << setw(15) << left << room.type
+             << setw(15) << left << room.pricePerNight
+             << setw(10) << left << room.capacity
+             << setw(10) << left << (room.booked ? "Booked" : "Available") << endl;
+    }
+    cout << "============================================================\n";
+}
+
+    void exitSystem()
+    {
+        cout << "========================= Thank you for visiting ========================\n";
+        saveHotelData();
+        saveHotelStatus();
+        saveUserReviews();
+    }
+
+    void verifyAdmin()
+    {
+        cout << "Enter your name: ";
+        string adminName;
+        cin >> adminName;
+
+        cout << "Enter your password: ";
+        cin >> enteredPassword;
+
+        if (enteredPassword == adminPassword)
+        {
+            cout << "\nPassword correct! Logging in...\n";
+            system("pause");
+            system("cls");
+            adminDashboard();
+        }
+        else
+        {
+            cout << "Invalid password. Try again.\n";
+            system("pause");
+            verifyAdmin();
+        }
+    }
+
+    void adminDashboard()
+    {
+        system("cls");
+
+        loadHotelData();
+        loadHotelStatus();
+        loadUserReviews();
+
+        cout << R"(
+========================================================
+                 HOTEL MANAGEMENT SYSTEM
+                    ADMIN DASHBOARD
+========================================================
+1. View All Rooms
+2. View Monthly Bookings
+3. Calculate Profit & Expenses
+4. View Customer Reviews
+5. Add a Room
+6. Remove a Room
+7. Logout
+========================================================
+Enter your choice:
+)";
+        int choice;
+        cin >> choice;
+
+        switch (choice)
+        {
+        case 1:
+            checkRooms();
+            break;
+        case 2:
+            displayMonthlyBookings();
+            break;
+        case 3:
+            calculateProfit();
+            break;
+        case 4:
+            viewReviews();
+            break;
+        case 5:
+            addRoom();
+            break;
+        case 6:
+            removeRoom();
+            break;
+        case 7:
+            exitSystem();
+            break;
+        default:
+            cout << "Invalid choice! Please try again.\n";
+            system("pause");
+            adminDashboard();
+            break;
+        }
+    }
+
+    // Public save functions
+    void saveHotelData()
+    {
+        fstream outfile("hotelData.txt", ios::out);
+        if (!outfile)
+        {
+            cout << " Error saving hotel data!" << endl;
+            return;
+        }
+
+        outfile << revenue << " " << totalBookings << " " << occupancyDays;
+        outfile.close();
+    }
+
+    void saveHotelStatus()
+    {
+        fstream outfile("hotelStatus.txt", ios::out);
+        if (!outfile)
+        {
+            cout << " Error saving hotel status!" << endl;
+            return;
+        }
+
+        for (const auto &R : hotelRooms)
+        {
+            outfile << R.booked << " "
+                    << R.bookedBy << " "
+                    << R.capacity << " "
+                    << R.daysBooked << " "
+                    << R.pricePerNight << " "
+                    << R.roomNumber << " "
+                    << R.type << endl;
+        }
+        outfile.close();
+    }
+
+    void saveUserReviews()
+    {
+        fstream outfile("hotelReviews.txt", ios::out);
+        if (!outfile)
+        {
+            cout << " Error saving reviews!" << endl;
+            return;
+        }
+
+        for (auto it = customerReviews.begin(); it != customerReviews.end(); it++)
+        {
+            outfile << *it << endl;
+        }
+        outfile.close();
+    }
+
+private:
+    int totalBookings = 0;
+    int occupancyDays = 0;
+    int fixedCost = 40000;
+    int variableCost = 0;
+    int adminPassword = 1234567;
+
+    void checkRooms()
+    {
+        showRooms();
+        system("pause");
+        adminDashboard();
+    }
+
+    void displayMonthlyBookings()
+    {
+        system("cls");
+        cout << "============================================================\n";
+        cout << setw(10) << left << "Room No"
+             << setw(15) << left << "Type"
+             << setw(15) << left << "Price/Night"
+             << setw(10) << left << "Capacity" << endl;
+        cout << "============================================================\n";
+
+        for (const auto &room : bookedRooms)
+        {
+            cout << setw(10) << left << room.roomNumber
+                 << setw(15) << left << room.type
+                 << setw(15) << left << room.pricePerNight
+                 << setw(10) << left << room.capacity << endl;
+        }
+
+        cout << "============================================================\n";
+        cout << "Total bookings this month: " << totalBookings << "\n";
+        system("pause");
+        adminDashboard();
+    }
+
+    void calculateProfit()
+    {
+        system("cls");
+        int expenses = fixedCost + variableCost;
+        int profit = revenue - expenses;
+
+        cout << "=================== Hotel Financials =====================\n";
+        cout << "Total revenue   : ₹" << revenue << endl;
+        cout << "Total expenses  : ₹" << expenses << endl;
+        cout << "Total profit    : ₹" << profit << "\n\n";
+        cout << "Monthly bookings      : " << totalBookings << endl;
+        cout << "Total occupancy days  : " << occupancyDays << endl;
+        cout << "=========================================================\n";
+
+        system("pause");
+        adminDashboard();
+    }
+
+    void viewReviews()
+    {
+        system("cls");
+        cout << "=================== Customer Reviews =====================\n";
+        int index = 1;
+        for (const auto &review : customerReviews)
+        {
+            cout << index++ << ": " << review << "\n";
+        }
+        cout << "=========================================================\n";
+        system("pause");
+        adminDashboard();
+    }
+
+    void addRoom()
+    {
+        bool exitLoop = false;
+        while (!exitLoop)
+        {
+            system("cls");
+            showRooms();
+
+            cout << "\n===================== ADD NEW ROOM =====================\n";
+            cout << "1. Add a room\n0. Exit\nChoice: ";
+            int choice;
+            cin >> choice;
+
+            if (choice == 0)
+            {
+                exitLoop = true;
+                break;
+            }
+            else if (choice == 1)
+            {
+                Room newRoom;
+                cout << "Enter Room Number: ";
+                cin >> newRoom.roomNumber;
+                cout << "Enter Room Type (AC / Suite): ";
+                cin >> newRoom.type;
+                cout << "Enter Price per Night: ";
+                cin >> newRoom.pricePerNight;
+                cout << "Enter Capacity: ";
+                cin >> newRoom.capacity;
+
+                newRoom.booked = false;
+                newRoom.bookedBy = "";
+                newRoom.daysBooked = 0;
+
+                hotelRooms.push_back(newRoom);
+                cout << "\nRoom added successfully!\n";
+                system("pause");
+            }
+            else
+            {
+                cout << "Invalid choice! Enter 0 or 1.\n";
+                system("pause");
+            }
+        }
+        adminDashboard();
+    }
+
+    void removeRoom()
+    {
+        bool exitLoop = false;
+        while (!exitLoop)
+        {
+            system("cls");
+            showRooms();
+
+            cout << "\n===================== REMOVE ROOM =====================\n";
+            cout << "1. Remove a room\n0. Exit\nChoice: ";
+            int choice;
+            cin >> choice;
+
+            if (choice == 0)
+            {
+                exitLoop = true;
+                break;
+            }
+            else if (choice == 1)
+            {
+                int roomNum;
+                cout << "Enter Room Number to remove: ";
+                cin >> roomNum;
+
+                auto it = find_if(hotelRooms.begin(), hotelRooms.end(),
+                                  [roomNum](const Room &r)
+                                  { return r.roomNumber == roomNum; });
+
+                if (it != hotelRooms.end())
+                {
+                    hotelRooms.erase(it);
+                    cout << "Room removed successfully!\n";
+                }
+                else
+                {
+                    cout << "Room not found! Check the number.\n";
+                }
+                system("pause");
+            }
+            else
+            {
+                cout << "Invalid choice! Enter 0 or 1.\n";
+                system("pause");
+            }
+        }
+        adminDashboard();
+    }
+
+    void loadHotelData()
+    {
+        ifstream infile("hotelData.txt");
+        if (!infile)
+        {
+            return;
+        }
+
+        infile >> revenue >> totalBookings >> occupancyDays;
+        infile.close();
+    }
+
+    void loadHotelStatus()
+    {
+        ifstream infile("Pictures\\hotelStatus.txt");
+        if (!infile)
+        {
+            return;
+        }
+
+        Room user1;
+        hotelRooms.clear();
+
+        while (infile >> user1.booked >> user1.bookedBy >> user1.capacity >> user1.daysBooked >> user1.pricePerNight >> user1.roomNumber >> user1.type)
+        {
+            hotelRooms.push_back(user1);
+        }
+        infile.close();
+    }
+
+    void loadUserReviews()
+    {
+        ifstream infile("hotelReviews.txt");
+        if (!infile)
+        {
+            return;
+        }
+
+        customerReviews.clear();
+        string review;
+        while (getline(infile, review))
+        {
+            if (!review.empty())
+            {
+                customerReviews.push_back(review);
+            }
+        }
+        infile.close();
+    }
+};
+
+class User
+{
+public:
+    // Struct for booking date
+    struct Date
+    {
+        int day;
+        int month;
+        int year;
+    };
+
+    // Struct for storing user details
+    struct Data
+    {
+        string userName;
+        int userAge;
+        int userAmount = 0;
+        Date userBookingDate;
+        int noDays;
+        string email;
+        int password;
+        int bookedRoomNo;
+    };
+
+    Data user;                   // Current user session
+    vector<Data> customerDetail; // All customers
+
+    // Function to input user details and start session
+    void userDetails()
+    {
+        system("cls");
+        cout << "============================================================\n";
+        cout << "             WELCOME TO GRAND STAY HOTEL \n";
+        cout << "============================================================\n";
+
+        cout << "Enter your full name: ";
+        cin.ignore();
+        getline(cin, user.userName);
+
+        cout << "Enter your age: ";
+        cin >> user.userAge;
+
+        cout << "Enter your password: ";
+        cin >> user.password;
+
+        cout << "Enter your email address: ";
+        cin >> user.email;
+
+        customerDetail.push_back(user); // Add to customer list
+        loadCustomerDetails();          // Load existing data
+
+        // Create admin instance for userDashboard
+        Admin admin;
+        userDashboard(admin); // Go to main user menu
+    }
+
+private:
+    vector<string> customerReview; // User reviews
+
+public:
+    // Function to book a room
+    void bookRoom(Admin &admin)
+    {
+        system("cls");
+        admin.showRooms(); // Show all rooms
+
+        int selection;
+        cout << "Enter room number to book: ";
+        cin >> selection;
+
+        bool bookedSuccessfully = false;
+
+        for (auto &room : admin.hotelRooms)
+        {
+            if (room.roomNumber == selection)
+            {
+                if (!room.booked)
+                {
+                    cout << "Enter number of days you want to stay: ";
+                    cin >> user.noDays;
+
+                    room.booked = true;
+                    room.bookedBy = user.userName;
+                    room.daysBooked = user.noDays;
+                    user.bookedRoomNo = room.roomNumber;
+                    user.userAmount += (room.pricePerNight * user.noDays);
+
+                    admin.bookedRooms.push_back(room); // Add to admin's booked rooms
+                    bookedSuccessfully = true;
+
+                    cout << "Room booked successfully!\n";
+                    system("pause");
+                    break;
+                }
+                else
+                {
+                    cout << "Room already booked!\n";
+                    system("pause");
+                    break;
+                }
+            }
+        }
+
+        if (!bookedSuccessfully)
+        {
+            cout << "Invalid room number!\n";
+            system("pause");
+        }
+
+        userDashboard(admin);
+    }
+
+    // Function to view user booking details
+    void viewBookingDetails(Admin &admin)
+    {
+        system("cls");
+
+        // First check current session
+        if (user.bookedRoomNo != 0)
+        {
+            cout << "======================================================\n";
+            cout << "= Name         : " << user.userName << endl;
+            cout << "= No of days   : " << user.noDays << endl;
+            cout << "= Room number  : " << user.bookedRoomNo << endl;
+            cout << "= Total Amount : " << user.userAmount <<"Rs"<< endl;
+            cout << "======================================================\n";
+        }
+        else
+        {
+            cout << "No active booking found!\n";
+        }
+
+        system("pause");
+        userDashboard(admin);
+    }
+
+
+// Function to cancel a booking
+void cancelBooking(Admin &admin) {
+    system("cls");
+
+    // Check if current user has a booking
+    if (user.bookedRoomNo == 0) {
+        cout << "No active booking found to cancel!\n";
+        system("pause");
+        userDashboard(admin);
+        return;
+    }
+
+    cout << "You have booked Room " << user.bookedRoomNo << " for " << user.noDays << " days.\n";
+    cout << "Are you sure you want to cancel this booking? (1 for Yes / 2 for No): ";
+    int choice;
+    cin >> choice;
+
+    if (choice == 1) {
+        // Mark room as available in admin
+        for (auto &room : admin.hotelRooms) {
+            if (room.roomNumber == user.bookedRoomNo) {
+                room.booked = false;
+                room.bookedBy = "";
+                room.daysBooked = 0;
+                break;
+            }
+        }
+
+        // Remove from customerDetail vector
+        customerDetail.erase(
+            remove_if(customerDetail.begin(), customerDetail.end(),
+                      [&](const Data &d) { return d.userName == user.userName && d.bookedRoomNo == user.bookedRoomNo; }),
+            customerDetail.end());
+
+        // Reset current session
+        user.bookedRoomNo = 0;
+        user.noDays = 0;
+        user.userAmount = 0;
+
+        cout << "Booking canceled successfully!\n";
+    } else {
+        cout << "Booking not canceled.\n";
+    }
+
+    system("pause");
+    userDashboard(admin);
+}
+
+// Function to order food
+void orderFood(Admin &admin)
+{
+    system("cls");
+
+    struct Food
+    {
+        string category;
+        string name;
+        int price;
+    };
+
+    vector<Food> menu = {
+        {"STARTERS", "Veg Spring Rolls", 149},
+        {"STARTERS", "Paneer Tikka", 199},
+        {"MAIN COURSE", "Butter Chicken", 299},
+        {"MAIN COURSE", "Paneer Butter Masala", 249},
+        {"CHINESE", "Veg Hakka Noodles", 179},
+        {"CHINESE", "Chicken Hakka Noodles", 219},
+        {"BEVERAGES", "Coke", 49},
+        {"BEVERAGES", "Cold Coffee", 79},
+        {"DESSERTS", "Chocolate Lava Cake", 149},
+        {"DESSERTS", "Ice Cream (2 Scoops)", 99},
+        {"DESSERTS", "Vanilla Ice Cream", 89},
+        {"DESSERTS", "Chocolate Ice Cream", 99},
+        {"DESSERTS", "Strawberry Ice Cream", 95},
+        {"DESSERTS", "Mango Ice Cream", 99},
+        {"DESSERTS", "Butterscotch Ice Cream", 105},
+        {"DESSERTS", "Oreo Ice Cream", 129},
+        {"DESSERTS", "Pistachio Ice Cream", 139},
+        {"DESSERTS", "Kulfi (Mango)", 149},
+        {"DESSERTS", "Kulfi (Pista)", 159},
+        {"DESSERTS", "Caramel Ice Cream", 109},
+        {"DESSERTS", "Mint Chocolate Chip Ice Cream", 119},
+        {"DESSERTS", "Coffee Ice Cream", 109},
+        {"DESSERTS", "Blueberry Ice Cream", 129},
+        {"DESSERTS", "Rum & Raisin Ice Cream", 149}};
+
+    int choice;
+    cout << "Welcome to In-Room Dining\n\n";
+    for (int i = 0; i < menu.size(); i++)
+    {
+        cout << i + 1 << ". " << menu[i].name << " (" << menu[i].price << " RS)" << endl;
+    }
+
+    cout << "Enter your choice: ";
+    cin >> choice;
+
+    if (choice >= 1 && choice <= menu.size())
+    {
+        user.userAmount += menu[choice - 1].price;
+        cout << "Your order will be delivered to your room shortly.\n";
+    }
+    else
+    {
+        cout << "Invalid choice!\n";
+    }
+
+    system("pause");
+    userDashboard(admin);
+}
+
+// Function to request room service
+void requestRoomService(Admin &admin)
+{
+    system("cls");
+    int choice;
+
+    cout << "ROOM SERVICE MENU\n";
+    cout << "1. Room Cleaning\n";
+    cout << "2. Laundry & Dry Cleaning\n";
+    cout << "3. Medical Assistance\n";
+    cout << "4. Temperature Control Requests\n";
+    cout << "5. In-room Entertainment Setup\n";
+
+    cout << "Enter your choice (1-5): ";
+    cin >> choice;
+
+    cout << "Staff will be available for your service shortly. Thank you!\n";
+
+    system("pause");
+    userDashboard(admin);
+}
+
+// Function to leave a review
+void leaveReview(Admin &admin)
+{
+    system("cls");
+    string review;
+    cout << "Enter your review: ";
+    cin.ignore();
+    getline(cin, review);
+
+    customerReview.push_back(review);
+    admin.customerReviews.push_back(review); // Also add to admin's reviews
+    cout << "Thank you for your review!\n";
+
+    system("pause");
+    userDashboard(admin);
+}
+
+// Function to logout and pay bill
+void logOut(Admin &admin)
+{
+    system("cls");
+    int payment;
+
+    cout << "Thank you for visiting Grand Stay Hotel!\n";
+    cout << "Your total bill is: ₹" << user.userAmount << endl;
+
+    cout << "Enter payment amount: ";
+    cin >> payment;
+
+    if (payment >= user.userAmount)
+    {
+        admin.revenue += user.userAmount; // Update admin revenue
+        cout << "Payment received. Change: " << (payment - user.userAmount) <<"RS"<< "\n";
+        cout << "Have a great day!\n";
+
+        // Save data before exit
+        saveCustomerDetails();
+        admin.saveUserReviews();
+        admin.saveHotelData();
+        admin.saveHotelStatus();
+    }
+    else
+    {
+        cout << "Insufficient payment! Please pay the full amount.\n";
+        system("pause");
+        userDashboard(admin);
+        return;
+    }
+
+    system("pause");
+    exit(0);
+}
+
+// Main user dashboard menu
+void userDashboard(Admin &admin)
+{
+    system("cls");
+    int choice;
+
+    cout << R"(
+========================================================
+                 HOTEL MANAGEMENT SYSTEM
+                   CUSTOMER DASHBOARD
+========================================================
+1. Book a Room
+2. View My Booking Details
+3. Cancel Booking
+4. Order Food
+5. Request Room Service
+6. Leave a Review
+7. Logout
+========================================================
+Enter your choice:
+)";
+    cin >> choice;
+
+    switch (choice)
+    {
+    case 1:
+        bookRoom(admin);
+        break;
+    case 2:
+        viewBookingDetails(admin);
+        break;
+    case 3:
+        cancelBooking(admin);
+        break;
+    case 4:
+        orderFood(admin);
+        break;
+    case 5:
+        requestRoomService(admin);
+        break;
+    case 6:
+        leaveReview(admin);
+        break;
+    case 7:
+        logOut(admin);
+        break;
+    default:
+        cout << "Invalid choice! Please try again.\n";
+        system("pause");
+        userDashboard(admin);
+        break;
+    }
+}
+
+void saveCustomerDetails()
+{
+    fstream outfile("customerDetails.txt", ios::out);
+    if (!outfile)
+    {
+        cout << " Error saving customer details!" << endl;
+        return;
+    }
+
+    for (const auto &R : customerDetail)
+    {
+        outfile << R.userName << " "
+                << R.userAge << " "
+                << R.userAmount << " "
+                << R.userBookingDate.day << " "
+                << R.userBookingDate.month << " "
+                << R.userBookingDate.year << " "
+                << R.noDays << " "
+                << R.email << " "
+                << R.password << " "
+                << R.bookedRoomNo
+                << "\n";
+    }
+
+    outfile.close();
+}
+
+void loadCustomerDetails()
+{
+    ifstream infile("customerDetails.txt", ios::in);
+    if (!infile)
+    {
+        return; // File doesn't exist yet, that's OK
+    }
+
+    // Clear existing data before loading
+    customerDetail.clear();
+
+    Data temp;
+    while (infile >> temp.userName >> temp.userAge >> temp.userAmount >> temp.userBookingDate.day >> temp.userBookingDate.month >> temp.userBookingDate.year >> temp.noDays >> temp.email >> temp.password >> temp.bookedRoomNo)
+    {
+
+        customerDetail.push_back(temp);
+    }
+
+    infile.close();
+}
+}
+;
+
+// Home screen function
+void homeScreen(Admin &admin, User &customer)
+{
+    system("cls");
+    int accessType;
+
+    cout << R"(========================================================
+                WELCOME TO GRAND STAY HOTEL
+========================================================
+               1. Owner / Admin Login
+               2. Customer
+               3. Exit
+========================================================
+Enter your choice: )";
+    cin >> accessType;
+
+    switch (accessType)
+    {
+    case 1:
+        admin.verifyAdmin();
+        break;
+    case 2:
+        customer.userDetails();
+        break;
+    case 3:
+        cout << "Thank you for visiting! Come again.\n";
+        exit(0);
+        break;
+    default:
+        cout << "Invalid choice! Try again.\n";
+        system("pause");
+        homeScreen(admin, customer);
+        break;
+    }
+}
+
+// Main function
+int main()
+{
+    Admin admin;
+    User customer;
+
+    while (true)
+    {
+        homeScreen(admin, customer);
+    }
+
+    return 0;
+}
